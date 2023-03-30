@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<title>dsp task2</title>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="format.css">
+
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+
+
+  <body>
+        <div id="firstDiv">
+        <input type="file" id="fileInput" onchange="OpenFile(event)">
+        <label for="slid">change sampling</label>
+        <input type="range" id="slid" min="0" max="100" value="10" onchange="plotsampled(this.value)">
+        <button id="toggle-btn" onclick="togglePlot()">Start</button>
+    </div>
+     <div id="plot" >
+    </div>
+
+    <script type="text/javascript" src="formatjs.js"></script>  
+    <script src="dsp.js"></script>
+    <div id="myDiv"></div>
+    
+    
+    <script>
+
+        var plotDiv = document.getElementById('plot');
+        var x = [];
+        var y = [];
+        var labels = [];
+        var cnt = 0;
+        var intervalID;
+        var plotColor = '#1f77b4'; // Default color
+        var yRange = [-2.5, 2.5];
+        var xRange = [0, 100];
+        var intervalTime = 50;
+        var windowSize = 100;
+        var windowStart = 0;
+        var samplingFreq;
+        var windowEnd = windowStart + windowSize;
+
+        function updateInterval(intervalTime) {
+            if (intervalID) {
+                clearInterval(intervalID);
+                intervalID = setInterval(update, intervalTime);
+            }
+        }
+
+        function OpenFile(event) {
+            cnt = 0;
+            var input = event.target;
+            var reader = new FileReader();
+            reader.onload = function () {
+                var lines = reader.result.split('\n');
+                for (var i = 0; i < lines.length - 1; i++) {
+                    var cols = lines[i].split('\t');
+                    if (cols[0] != NaN && cols[1] != NaN) {
+                        x.push(parseFloat(cols[0])); //
+                        y.push(parseFloat(cols[1]));
+                    }
+                }
+                plot();
+
+            };
+            reader.readAsText(input.files[0]);
+        }
+        
+        function plot() {
+
+            var samplingFreq = 4;
+
+            // Create a new array with the sampled data
+            var sampled_Signal = [];
+            var sampledSignalYrange = [];
+            for (var i = 0; i < x.length; i += samplingFreq) {
+                sampled_Signal.push(x[i]);
+                sampledSignalYrange.push(y[i]);
+            }
+
+            var layout = {
+                title:'Original Signal vs. Sampled Signal',
+                scrollZoom: true,
+                showlegend: true,
+                modeBar: { orientation: 'v' },
+                xaxis: { range: [0,0.1], fixedrange: true,title: 'Time (ms)' },
+                yaxis: { range: [-2.5,2.5],title: 'Amplitude'},
+            };
+
+            var trace = {
+                x: x,
+                y: y,
+                mode: 'lines',
+                name:'Orginal Signal',
+                line: {
+                    color: 'blue',
+                    width: 2
+                }
+
+            };
+
+            var trace2 = {
+                x: sampled_Signal,
+                y: sampledSignalYrange,
+                mode: 'markers',
+                name: 'Sampled Signal',
+            };
+
+            var data = [trace,trace2];
+            plotSampled();
+            Plotly.newPlot(plotDiv, data, layout);
+
+        }
+
+        // Create an array with the signal data
+        //var signal = [0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -4, -3, -2, -1];
+
+        function plotSampled() {
+
+            // Define the sampling frequency
+            var samplingFreq = 4;
+
+            // Create a new array with the sampled data
+            var sampledSignal = [];
+            var sampledSignalYrange = [];
+            for (var i = 0; i < x.length; i += samplingFreq) {
+                sampledSignal.push(x[i]);
+                sampledSignalYrange.push(y[i]);
+            }
+
+
+            // Create a trace for the original signal
+            /*var trace1 = {
+                x: Array.from(Array(signal.length).keys()),
+                y: signal,
+                mode: 'lines',
+                name: 'Original Signal'
+            };*/
+
+            // Create a trace for the sampled signal
+            var trace2 = {
+                //x: Array.from(Array(sampledSignal.length).keys()).map(function(x) { return x * samplingFreq; }),
+                x:sampledSignal,
+                y: sampledSignalYrange,
+                mode: 'lines',
+                name: 'Sampled Signal'
+            };
+
+            // Add both traces to a data array
+            //var data = [trace1, trace2];
+            var dataSampled = [trace2];
+            // Define the layout object
+            var layout = {
+                title: 'Original Signal vs. Sampled Signal',
+                xaxis: {
+                    range:[0,0.1],
+                    title: 'Time (ms)'
+                },
+                yaxis: {
+                    range:[-3,3],
+                    title: 'Amplitude'
+                }
+            };
+
+            // Create the plot using the Plotly newPlot function
+            Plotly.newPlot('myDiv', dataSampled, layout);
+            
+
+        }
+
+    </script>
+  
+</body>
+</html>
